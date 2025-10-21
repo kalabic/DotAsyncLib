@@ -1,6 +1,6 @@
 ﻿using DotBase.Event;
 
-namespace DotAsync.Model;
+namespace DotAsync.AsyncValue;
 
 
 public interface IAsyncValue<TValue> 

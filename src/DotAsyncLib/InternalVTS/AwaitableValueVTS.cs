@@ -1,8 +1,7 @@
 ﻿using DotBase.Event;
-using DotAsync.Lock;
 using System.Diagnostics;
 using System.Threading.Tasks.Sources;
-using DotAsync.Model;
+using DotAsync.AsyncValue;
 
 namespace DotAsync.InternalVTS;
 
@@ -29,10 +28,10 @@ internal abstract class AwaitableValueVTS<TValue, TCompletedValue>
 
     // Private data >>
 
-    protected readonly FastFIFOLock _lock = new();
+    protected readonly IFIFOLock _lock = AsyncTools.NewDisposableFastLock();
 
     /// <summary> Needed because 'Unregister' function can and will be invoked sometimes (very rare) during construction. </summary>
-    protected readonly FastFIFOLock _unregisterLock = new();
+    protected readonly IFIFOLock _unregisterLock = AsyncTools.NewDisposableFastLock();
 
     protected ValueTaskSource<TCompletedValue> _vts;
 

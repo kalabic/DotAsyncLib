@@ -1,12 +1,13 @@
-﻿using DotBase.Tools;
-using DotBase.Core;
+﻿using DotBase.Core;
+using DotBase.Tools;
+using System.Diagnostics.CodeAnalysis;
 
-namespace DotAsync.Lock;
+namespace DotAsync.InternalLock;
 
 
-public abstract class FIFOLock
+internal abstract class DisposableFIFOLock
     : DisposableBase
-    , IFIFOLock
+    , IDisposableFIFOLock
 {
     protected const int ITERS_SPIN   = 100;
     protected const int ITERS_YIELD  = 200;
@@ -22,9 +23,6 @@ public abstract class FIFOLock
     public virtual bool IsOwned => Volatile.Read(ref _nextTicket) > Volatile.Read(ref _serving);
 
     public virtual int QueueLength { get { return (int)(Interlocked.Read(ref _nextTicket) - Interlocked.Read(ref _serving)); } }
-
-    /// <summary> If disposed, returned ticket will be in 'failed' state. </summary>
-    public abstract LockedValue<T> LockValue<T>(T value);
 
     /// <summary> If disposed, returned ticket will be in 'failed' state. </summary>
     public abstract LockedTicket Lock();
@@ -57,7 +55,7 @@ public abstract class FIFOLock
     //
     //-------------------------------------------------------------------------
 
-    protected FIFOLock(bool enableDispose)
+    protected DisposableFIFOLock(bool enableDispose)
     {
         _enableDispose = enableDispose;
     }
@@ -128,10 +126,9 @@ public abstract class FIFOLock
         }
     }
 
+    [Experimental("DotAsync_Lock0")]
     public int DisposeAndWaitEmptyQueue()
     {
-        throw new InvalidOperationException("WIP");
-#if false
         int length = QueueLength;
         Dispose();
         var spin = new SpinWait();
@@ -144,6 +141,5 @@ public abstract class FIFOLock
             iters++;
         }
         return length;
-#endif
     }
 }

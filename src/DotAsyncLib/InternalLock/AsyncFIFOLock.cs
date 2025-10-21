@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace DotAsync.Lock;
+namespace DotAsync.InternalLock;
 
 #pragma warning disable CS0420 // CS0420: A reference to a volatile field will not be treated as volatile
 
@@ -15,8 +15,8 @@ namespace DotAsync.Lock;
 ///   when completing the successor to preserve Vars semantics for the acquiring flow.</item>
 /// </list>
 /// </summary>
-public sealed class AsyncFIFOLock 
-    : FIFOLock
+internal sealed class AsyncFIFOLock 
+    : DisposableFIFOLock
 {
     // tail of the queue; null == free
     private volatile McsNode? _tail;
@@ -25,16 +25,6 @@ public sealed class AsyncFIFOLock
     public AsyncFIFOLock(bool enableDispose = false)
         : base(enableDispose)
     { }
-
-    /// <summary>
-    /// 
-    /// Enter the lock in FIFO order and return a disposable that releases it.
-    /// 
-    /// </summary>
-    public override LockedValue<T> LockValue<T>(T value)
-    {
-        return new LockedValue<T>(Lock(), value);
-    }
 
     public override LockedTicket Lock()
     {
@@ -81,7 +71,7 @@ public sealed class AsyncFIFOLock
 
     /// <summary>
     /// 
-    /// Lock async (MCS enqueue).
+    /// InternalLock async (MCS enqueue).
     /// 
     /// <para>If disposed, task will be returned as successful, but ticket in result will be failed.</para>
     /// 
@@ -120,14 +110,8 @@ public sealed class AsyncFIFOLock
     /// Release path: wake successor if present; otherwise attempt to set tail back to null.
     /// This follows the canonical MCS release algorithm.
     /// </summary>
-    public void Exit(LockedTicket ticket)
+    private void Exit(McsNode node)
     {
-        // The handler carried the node itself (implements ITicketHandler).
-        if (!(ticket.Handler is McsNode node))
-        {
-            throw new InvalidOperationException("Invalid ticket handler type in AsyncFIFOLock.Exit.");
-        }
-
         // Fast path: if we have no known successor
         var next = Volatile.Read(ref node.Next);
         if (next == null)
@@ -177,7 +161,7 @@ public sealed class AsyncFIFOLock
     //
     //-------------------------------------------------------------------------
 
-    private sealed class McsNode : ITicketHandler
+    private sealed class McsNode
     {
         public volatile McsNode? Next;
         public ValueTaskSource<LockedTicket> VTS;
@@ -199,12 +183,12 @@ public sealed class AsyncFIFOLock
             Ticket = ticket;
 
             VTS = new ValueTaskSource<LockedTicket>();
-            LockedTicket = new LockedTicket(ticket, this, reentrant: false);
+            LockedTicket = new LockedTicket(ticket, Exit);
 
             // Capture context to allow caller's Vars to be visible when the lock is granted.
             CapturedContext = preserveContext ? ExecutionContext.Capture() : null;
         }
 
-        void ITicketHandler.Exit(in LockedTicket ticket) => _owner.Exit(ticket);
+        void Exit(in LockedTicket ticket) => _owner.Exit(this);
     }
 }

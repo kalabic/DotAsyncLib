@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace DotAsync.Lock;
+namespace DotAsync.InternalLock;
 
 
 /// <summary>
@@ -8,25 +8,12 @@ namespace DotAsync.Lock;
 /// FIFO queued lock with task-aware ownership and WITHOUT reentrancy.
 /// 
 /// </summary>
-public sealed class FastFIFOLock 
-    : FIFOLock
+internal sealed class FastFIFOLock
+    : DisposableFIFOLock
 {
-    private readonly FastFIFOTicketHandler _handler;
-
     public FastFIFOLock(bool enableDispose = false)
         : base(enableDispose)
     {
-        _handler = new(this);
-    }
-
-    /// <summary>
-    /// 
-    /// Enter the lock in FIFO order and return a disposable that releases it.
-    /// 
-    /// </summary>
-    public override LockedValue<T> LockValue<T>(T value)
-    {
-        return new LockedValue<T>(Lock(), value);
     }
 
     /// <summary>
@@ -44,20 +31,20 @@ public sealed class FastFIFOLock
         }
 
         // Return a scope that will release on Dispose().
-        return new LockedTicket(my, _handler, false);
+        return new LockedTicket(my, Exit);
     }
 
     public override ValueTask<LockedTicket> LockAsync(bool preserveContext = false)
     {
         // First-time acquisition: take a ticket, then wait for our turn.
         long my = Interlocked.Increment(ref _nextTicket) - 1;
-        if (Volatile.Read(ref _serving) != Volatile.Read(ref my))
+        if (Volatile.Read(ref _serving) != my)
         {
             var spin = new SpinWait();
             spin.SpinOnce();
 
             int iters = 0;
-            while (!IsDisposed && Volatile.Read(ref _serving) != Volatile.Read(ref my))
+            while (!IsDisposed && Volatile.Read(ref _serving) != my)
             {
                 if (!spin.NextSpinWillYield)
                 {
@@ -72,7 +59,7 @@ public sealed class FastFIFOLock
                             var task = Task.Run(() =>
                             {
                                 SpinWait.SpinUntil(() => !IsDisposed && Volatile.Read(ref _serving) == my);
-                                return IsDisposed ? LockedTicket.FAILED : new LockedTicket(my, _handler, false);
+                                return IsDisposed ? LockedTicket.FAILED : new LockedTicket(my, Exit);
                             });
                             return new ValueTask<LockedTicket>(task);
                         }
@@ -82,7 +69,7 @@ public sealed class FastFIFOLock
                         var task = Task.Run(() =>
                         {
                             SpinWait.SpinUntil(() => !IsDisposed && Volatile.Read(ref _serving) == my);
-                            return IsDisposed ? LockedTicket.FAILED : new LockedTicket(my, _handler, false);
+                            return IsDisposed ? LockedTicket.FAILED : new LockedTicket(my, Exit);
                         });
                         return new ValueTask<LockedTicket>(task);
                     }
@@ -98,7 +85,7 @@ public sealed class FastFIFOLock
         }
 
         // Return a scope that will release on Dispose().
-        return ValueTask.FromResult(new LockedTicket(my, _handler, false));
+        return ValueTask.FromResult(new LockedTicket(my, Exit));
     }
 
     /// <summary>
@@ -130,11 +117,11 @@ public sealed class FastFIFOLock
 
         Debug.Assert(Volatile.Read(ref _nextTicket) == Volatile.Read(ref _serving) + 1);
 
-        scope = new LockedTicket(next, _handler, reentrant: false);
+        scope = new LockedTicket(next, Exit);
         return true;
     }
 
-    private void Exit(LockedTicket lockedTicket)
+    private void Exit(in LockedTicket lockedTicket)
     {
         if (lockedTicket.Ticket == _serving)
         {
@@ -144,26 +131,6 @@ public sealed class FastFIFOLock
         else
         {
             throw new InvalidOperationException($"Invalid operation on one of {nameof(LockedTicket)} and {nameof(FastFIFOLock)}");
-        }
-    }
-
-
-    //-------------------------------------------------------------------------
-    //
-    // Implementation specific tools.
-    //
-    //-------------------------------------------------------------------------
-
-    private readonly struct FastFIFOTicketHandler
-        : ITicketHandler
-    {
-        private readonly FastFIFOLock _main;
-
-        internal FastFIFOTicketHandler(FastFIFOLock main) { _main = main; }
-
-        public void Exit(in LockedTicket lockedTicket)
-        {
-            _main.Exit(lockedTicket);
         }
     }
 }

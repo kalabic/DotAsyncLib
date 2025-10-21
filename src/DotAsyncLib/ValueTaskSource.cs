@@ -1,5 +1,4 @@
-﻿using DotAsync.Lock;
-using System.Threading.Tasks.Sources;
+﻿using System.Threading.Tasks.Sources;
 
 namespace DotAsync;
 
@@ -32,7 +31,7 @@ internal class ValueTaskSource<T> : IValueTaskSource<T>
 
     private ManualResetValueTaskSourceCore<T> _core;
 
-    private readonly FastFIFOLock _lock;
+    private readonly IFIFOLock _lock;
 
     private bool _completed;
 
@@ -40,10 +39,10 @@ internal class ValueTaskSource<T> : IValueTaskSource<T>
     // Implementation >>
 
     public ValueTaskSource()
-        : this(new FastFIFOLock())
+        : this(AsyncTools.NewDisposableFastLock())
     { }
 
-    public ValueTaskSource(FastFIFOLock fastLock)
+    public ValueTaskSource(IFIFOLock fastLock)
     {
         _core = new()
         {

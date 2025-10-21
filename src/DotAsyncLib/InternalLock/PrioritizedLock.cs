@@ -1,17 +1,34 @@
-﻿using DotBase.Tools;
-using DotBase.Core;
+﻿using DotBase.Core;
+using DotBase.Tools;
+using System.Diagnostics.CodeAnalysis;
 
-namespace DotAsync.Lock;
+namespace DotAsync.InternalLock;
 
 
-public class PriorityFIFOLock
+#pragma warning disable DotAsync_Lock0
+
+
+internal class PrioritizedLock
     : DisposableBase
+    , IDisposablePrioritizedLock
 {
-    private readonly AsyncFIFOLock _asyncLock;
+    // Public properties >>
 
-    private readonly AsyncFIFOLock _priorityLock;
+    public bool IsOwned { get { return _priorityLock.IsOwned; } }
 
-    public PriorityFIFOLock(bool enableDispose = false)
+    public int QueueLength { get { return _priorityLock.QueueLength; } }
+
+
+    // Private data >>
+
+    private readonly IDisposableFIFOLock _asyncLock;
+
+    private readonly IDisposableFIFOLock _priorityLock;
+
+
+    // Implementation >>
+
+    public PrioritizedLock(bool enableDispose = false)
     {
         _asyncLock = new AsyncFIFOLock(enableDispose);
         _priorityLock = new AsyncFIFOLock(enableDispose);
@@ -27,6 +44,7 @@ public class PriorityFIFOLock
         base.Dispose(disposing);
     }
 
+    [Experimental("DotAsync_Lock0")]
     public int DisposeAndWaitEmptyQueue()
     {
         int length = _priorityLock.DisposeAndWaitEmptyQueue();
@@ -34,22 +52,25 @@ public class PriorityFIFOLock
         return length;
     }
 
-    public LockedTicket TryLock()
+    public bool TryLock(out LockedTicket scope)
     {
         if (!_asyncLock.TryLock(out var asyncTicket))
         {
-            return LockedTicket.FAILED;
+            scope = LockedTicket.FAILED;
+            return false;
         }
         InvalidOperationExtension.ThrowIfTrue(asyncTicket.Failed);
 
         if (!_priorityLock.TryLock(out var priorityTicket))
         {
             asyncTicket.Dispose();
-            return LockedTicket.FAILED;
+            scope = LockedTicket.FAILED;
+            return false;
         }
         InvalidOperationExtension.ThrowIfTrue(priorityTicket.Failed);
 
-        return new LockedTicket(priorityTicket.Ticket, new PriorityTicketHandler(asyncTicket, priorityTicket), false);
+        scope = PriorityTicketHandler.LinkedTickets(asyncTicket, priorityTicket);
+        return true;
     }
 
     public LockedTicket Lock()
@@ -67,25 +88,25 @@ public class PriorityFIFOLock
             return priorityTicket;
         }
 
-        return new LockedTicket(priorityTicket.Ticket, new PriorityTicketHandler(asyncTicket, priorityTicket), false);
+        return PriorityTicketHandler.LinkedTickets(asyncTicket, priorityTicket);
     }
 
-    public async ValueTask<LockedTicket> LockAsync()
+    public async ValueTask<LockedTicket> LockAsync(bool preserveContext = false)
     {
-        var asyncTicket = await _asyncLock.LockAsync().ConfigureAwait(false);
+        var asyncTicket = await _asyncLock.LockAsync(preserveContext).ConfigureAwait(false);
         if (asyncTicket.Failed)
         {
             return asyncTicket;
         }
 
-        var priorityTicket = await _priorityLock.LockAsync().ConfigureAwait(false);
+        var priorityTicket = await _priorityLock.LockAsync(preserveContext).ConfigureAwait(false);
         if (priorityTicket.Failed)
         {
             asyncTicket.Dispose();
             return priorityTicket;
         }
 
-        return new LockedTicket(priorityTicket.Ticket, new PriorityTicketHandler(asyncTicket, priorityTicket), false);
+        return PriorityTicketHandler.LinkedTickets(asyncTicket, priorityTicket);
     }
 
     public LockedTicket PriorityLock()

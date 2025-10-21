@@ -1,4 +1,4 @@
-﻿using DotAsync.Model;
+﻿using DotAsync.AsyncValue;
 
 namespace DotAsync.InternalVTS;
 
