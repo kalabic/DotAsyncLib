@@ -1,4 +1,4 @@
-﻿namespace DotAsync.Lock;
+﻿namespace DotAsync.InternalLock;
 
 
 internal sealed class PriorityTicketHandler

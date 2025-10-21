@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace DotAsync.Lock;
+namespace DotAsync;
 
 
 public interface IPrioritizedLock 

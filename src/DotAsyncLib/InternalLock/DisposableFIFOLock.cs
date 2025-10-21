@@ -2,10 +2,10 @@
 using DotBase.Tools;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotAsync.Lock;
+namespace DotAsync.InternalLock;
 
 
-public abstract class DisposableFIFOLock
+internal abstract class DisposableFIFOLock
     : DisposableBase
     , IDisposableFIFOLock
 {

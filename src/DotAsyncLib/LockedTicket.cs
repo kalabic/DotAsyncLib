@@ -1,7 +1,7 @@
 ﻿using DotBase.Log;
 using System.Runtime.CompilerServices;
 
-namespace DotAsync.Lock;
+namespace DotAsync;
 
 
 internal delegate void TicketReleaseHandler(in LockedTicket ticket);

@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace DotAsync.Lock;
+namespace DotAsync.InternalLock;
 
 
 /// <summary>
@@ -8,7 +8,7 @@ namespace DotAsync.Lock;
 /// FIFO queued lock with task-aware ownership and WITHOUT reentrancy.
 /// 
 /// </summary>
-public sealed class FastFIFOLock
+internal sealed class FastFIFOLock
     : DisposableFIFOLock
 {
     public FastFIFOLock(bool enableDispose = false)

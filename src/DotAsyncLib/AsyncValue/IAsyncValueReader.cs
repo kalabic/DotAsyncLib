@@ -1,4 +1,4 @@
-﻿namespace DotAsync.Model;
+﻿namespace DotAsync.AsyncValue;
 
 
 public interface IAsyncValueReader<TValue> 

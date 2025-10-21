@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
-namespace DotAsync.Lock;
+namespace DotAsync.InternalLock;
 
 
 /// <summary>
@@ -13,7 +13,7 @@ namespace DotAsync.Lock;
 /// <para><c>IMPORTANT: NEVER await while holding this lock.</c></para>
 /// 
 /// </summary>
-public sealed class ReentrantFIFOLock 
+internal sealed class ReentrantFIFOLock 
     : DisposableFIFOLock
 {
     private readonly AsyncLocal<OwnerState> _owner = new();

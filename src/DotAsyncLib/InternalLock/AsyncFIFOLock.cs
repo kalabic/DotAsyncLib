@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace DotAsync.Lock;
+namespace DotAsync.InternalLock;
 
 #pragma warning disable CS0420 // CS0420: A reference to a volatile field will not be treated as volatile
 
@@ -15,7 +15,7 @@ namespace DotAsync.Lock;
 ///   when completing the successor to preserve Vars semantics for the acquiring flow.</item>
 /// </list>
 /// </summary>
-public sealed class AsyncFIFOLock 
+internal sealed class AsyncFIFOLock 
     : DisposableFIFOLock
 {
     // tail of the queue; null == free
@@ -71,7 +71,7 @@ public sealed class AsyncFIFOLock
 
     /// <summary>
     /// 
-    /// Lock async (MCS enqueue).
+    /// InternalLock async (MCS enqueue).
     /// 
     /// <para>If disposed, task will be returned as successful, but ticket in result will be failed.</para>
     /// 

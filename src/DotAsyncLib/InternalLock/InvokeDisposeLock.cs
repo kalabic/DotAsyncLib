@@ -1,9 +1,10 @@
 ﻿using DotBase.Core;
 using DotBase.Tools;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 
-namespace DotAsync.Lock;
+namespace DotAsync.InternalLock;
+
+#pragma warning disable DotAsync_Lock1
 
 
 /// <summary>
@@ -15,9 +16,9 @@ namespace DotAsync.Lock;
 /// 'Invoke InvokeLock' tickets, but only a single 'Disposal InvokeLock'.
 /// </para>
 /// </summary>
-[Experimental("DotAsync_Lock1")]
-public class InvokeDisposeLock 
+internal class InvokeDisposeLock 
     : DisposableBase
+    , IInvokeDisposeLock
 {
     // Private data >>
 

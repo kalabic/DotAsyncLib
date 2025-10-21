@@ -1,7 +1,6 @@
 ﻿using DotBase.Core;
-using DotAsync.Lock;
 
-namespace DotAsync.Tools;
+namespace DotAsync.InternalTools;
 
 #pragma warning disable DotAsync_Lock1
 
@@ -9,7 +8,7 @@ namespace DotAsync.Tools;
 /// <summary>
 /// 
 /// Besides providing <see cref="ManualResetEventSlim"/> and access to its <see cref="System.Threading.WaitHandle"/>,
-/// this class provides and access to <see cref="Lock.InvokeDisposeLock"/> intended to be used by parent class for locking
+/// this class provides and access to <see cref="InternalLock.InvokeDisposeLock"/> intended to be used by parent class for locking
 /// ITS OWN state. This is to simplify and optimize implementation and is used by <see cref="AValue{TValue}"/>
 /// and <see cref="InternalVTS.AsyncValueWaiter{TValue}"/>.
 /// 
@@ -28,7 +27,7 @@ internal class LockedManualResetEvent
 
     private readonly ManualResetEventSlim _event = new();
 
-    private readonly InvokeDisposeLock _disposeLock = new(true);
+    private readonly IInvokeDisposeLock _disposeLock = AsyncTools.NewInvokeDisposeLock(true);
 
 
     // Implementation >>

@@ -1,5 +1,5 @@
-﻿using DotAsync.Model;
-using DotAsync.Tools;
+﻿using DotAsync.AsyncValue;
+using DotAsync.InternalTools;
 
 namespace DotAsync.InternalVTS;
 

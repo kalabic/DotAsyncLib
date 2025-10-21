@@ -1,5 +1,4 @@
-﻿using DotAsync.Lock;
-using System.Threading.Tasks.Sources;
+﻿using System.Threading.Tasks.Sources;
 
 namespace DotAsync;
 
@@ -40,7 +39,7 @@ internal class ValueTaskSource<T> : IValueTaskSource<T>
     // Implementation >>
 
     public ValueTaskSource()
-        : this(new FastFIFOLock())
+        : this(AsyncTools.NewDisposableFastLock())
     { }
 
     public ValueTaskSource(IFIFOLock fastLock)

@@ -2,13 +2,13 @@
 using DotBase.Tools;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotAsync.Lock;
+namespace DotAsync.InternalLock;
 
 
 #pragma warning disable DotAsync_Lock0
 
 
-public class PrioritizedLock
+internal class PrioritizedLock
     : DisposableBase
     , IDisposablePrioritizedLock
 {
