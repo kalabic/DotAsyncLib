@@ -11,13 +11,7 @@ namespace DotAsync.Lock;
 /// </summary>
 public class DisposeLock 
     : DisposableBase
-    , ITicketHandler
 {
-    public bool IsOwned => _ticketCount > 0;
-
-    public int QueueLength => _ticketCount;
-
-
     // Private data >>
 
     private readonly FastFIFOLock _fifoLock;
@@ -90,7 +84,7 @@ public class DisposeLock
                 }
             }
 
-            return new LockedTicket(++_ticketCount, this, false);
+            return new LockedTicket(++_ticketCount, Exit);
         }
     }
 
@@ -102,7 +96,7 @@ public class DisposeLock
             return LockedTicket.FAILED;
         }
         var asyncTicket = await _asyncLock.LockAsync().ConfigureAwait(false);
-        return new LockedTicket(priorityTicket.Ticket, new PriorityTicketHandler(asyncTicket, priorityTicket), false);
+        return PriorityTicketHandler.LinkedTickets(asyncTicket, priorityTicket);
     }
 
     public LockedTicket PriorityLock()
@@ -113,7 +107,7 @@ public class DisposeLock
             return LockedTicket.FAILED;
         }
         var asyncTicket = _asyncLock.Lock();
-        return new LockedTicket(priorityTicket.Ticket, new PriorityTicketHandler(asyncTicket, priorityTicket), false);
+        return PriorityTicketHandler.LinkedTickets(asyncTicket, priorityTicket);
     }
 
     private LockedTicket InternalPriorityLock()
@@ -126,7 +120,7 @@ public class DisposeLock
         return ticket;
     }
 
-    public void Exit(in LockedTicket lockedTicket)
+    private void Exit(in LockedTicket lockedTicket)
     {
         var fifoTicket = _fifoLock.Lock();
         Debug.Assert(_ticketCount > 0);

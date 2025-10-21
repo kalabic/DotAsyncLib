@@ -24,9 +24,6 @@ public abstract class FIFOLock
     public virtual int QueueLength { get { return (int)(Interlocked.Read(ref _nextTicket) - Interlocked.Read(ref _serving)); } }
 
     /// <summary> If disposed, returned ticket will be in 'failed' state. </summary>
-    public abstract LockedValue<T> LockValue<T>(T value);
-
-    /// <summary> If disposed, returned ticket will be in 'failed' state. </summary>
     public abstract LockedTicket Lock();
 
     /// <summary> If disposed, task will be returned as successful, but ticket in result will be in 'failed' state. </summary>

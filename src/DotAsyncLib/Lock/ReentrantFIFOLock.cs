@@ -23,18 +23,10 @@ public sealed class ReentrantFIFOLock
     /// <summary>  Waiter registry: maps ticket -> waiter </summary>
     private readonly ConcurrentDictionary<long, Waiter> _waiters = new ConcurrentDictionary<long, Waiter>();
 
-    private readonly ReentrantFIFOTicketHandler _handler;
-
 
     internal ReentrantFIFOLock(bool enableDispose = false)
         : base(enableDispose)
     {
-        _handler = new(this);
-    }
-
-    public override LockedValue<T> LockValue<T>(T value)
-    {
-        return new LockedValue<T>(Lock(), value);
     }
 
     public override LockedTicket Lock()
@@ -44,7 +36,7 @@ public sealed class ReentrantFIFOLock
         {
             state.Depth++;
             _owner.Value = state;
-            return new LockedTicket(state.Ticket, _handler, reentrant: true);
+            return new LockedTicket(state.Ticket, ReentrantExit);
         }
 
         long my = GetTicketUsingSpinWait();
@@ -54,7 +46,7 @@ public sealed class ReentrantFIFOLock
         }
 
         _owner.Value = new OwnerState { Ticket = my, Depth = 1 };
-        return new LockedTicket(my, _handler, reentrant: false);
+        return new LockedTicket(my, NonReentrantExit);
     }
 
     public override bool TryLock(out LockedTicket scope)
@@ -70,7 +62,7 @@ public sealed class ReentrantFIFOLock
         {
             state.Depth++;
             _owner.Value = state;
-            scope = new LockedTicket(state.Ticket, _handler, reentrant: true);
+            scope = new LockedTicket(state.Ticket, ReentrantExit);
             return true;
         }
 
@@ -88,7 +80,7 @@ public sealed class ReentrantFIFOLock
         }
 
         _owner.Value = new OwnerState { Ticket = next, Depth = 1 };
-        scope = new LockedTicket(next, _handler, reentrant: false);
+        scope = new LockedTicket(next, NonReentrantExit);
         return true;
     }
 
@@ -106,7 +98,7 @@ public sealed class ReentrantFIFOLock
         {
             state.Depth++;
             _owner.Value = state;
-            return ValueTask.FromResult(new LockedTicket(state.Ticket, _handler, reentrant: true));
+            return ValueTask.FromResult(new LockedTicket(state.Ticket, ReentrantExit));
         }
 
         // Issue a ticket
@@ -135,10 +127,20 @@ public sealed class ReentrantFIFOLock
 
         // If we reach here, it's our turn immediately
         _owner.Value = new OwnerState { Ticket = my, Depth = 1 };
-        return ValueTask.FromResult(new LockedTicket(my, _handler, reentrant: false));
+        return ValueTask.FromResult(new LockedTicket(my, NonReentrantExit));
     }
 
-    internal void Exit(LockedTicket lockedTicket)
+    internal void ReentrantExit(in LockedTicket lockedTicket)
+    {
+        Exit(lockedTicket, true);
+    }
+
+    internal void NonReentrantExit(in LockedTicket lockedTicket)
+    {
+        Exit(lockedTicket, false);
+    }
+
+    internal void Exit(in LockedTicket lockedTicket, bool reentrant)
     {
         var state = _owner.Value;
 
@@ -147,7 +149,7 @@ public sealed class ReentrantFIFOLock
             throw new SynchronizationLockException("ReentrantFIFOLock: exit without ownership.");
         }
 
-        if (lockedTicket.Reentrant)
+        if (reentrant)
         {
             state.Depth--;
             _owner.Value = state;
@@ -182,35 +184,15 @@ public sealed class ReentrantFIFOLock
                     _owner.Value = new OwnerState { Ticket = waiter.Ticket, Depth = 1 };
 
                     // Set the result; the continuation will execute under the captured context.
-                    waiter.VTS.SetResult(new LockedTicket(waiter.Ticket, _handler, reentrant: false));
+                    waiter.VTS.SetResult(new LockedTicket(waiter.Ticket, NonReentrantExit));
                 }, null);
             }
             else
             {
                 // No captured context — just set owner and complete (rare).
                 _owner.Value = new OwnerState { Ticket = waiter.Ticket, Depth = 1 };
-                waiter.VTS.SetResult(new LockedTicket(waiter.Ticket, _handler, reentrant: false));
+                waiter.VTS.SetResult(new LockedTicket(waiter.Ticket, NonReentrantExit));
             }
-        }
-    }
-
-
-    //-------------------------------------------------------------------------
-    //
-    // Implementation specific tools.
-    //
-    //-------------------------------------------------------------------------
-
-    private readonly struct ReentrantFIFOTicketHandler
-        : ITicketHandler
-    {
-        private readonly ReentrantFIFOLock _main;
-
-        internal ReentrantFIFOTicketHandler(ReentrantFIFOLock main) { _main = main; }
-
-        public void Exit(in LockedTicket lockedTicket)
-        {
-            _main.Exit(lockedTicket);
         }
     }
 

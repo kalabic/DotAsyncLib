@@ -1,37 +1,53 @@
 ﻿namespace DotAsync.Lock;
 
 
+internal delegate void TicketDisposedCallback(in LockedTicket ticket);
+
+
 /// <summary> 
 /// 
-/// Disposable wrapper to use with 'using'; disposing releases the lock.
+/// Disposable wrapper compatible with 'using' syntax; disposing releases the lock.
 /// 
 /// <see cref="Ticket"/> will be negative if lock failed (it was disposed for example).
 /// </summary>
 public readonly struct LockedTicket 
     : IDisposable
 {
-    /// <summary> FIFO locks from here return failed tickets after being disposed. </summary>
-    public static readonly LockedTicket FAILED = new LockedTicket(-1, null, false);
+    /// <summary> Disposed locks return failed tickets. </summary>
+    internal static readonly LockedTicket FAILED = new LockedTicket(-1, null);
 
+
+    // Public properties >>
+
+    /// <summary> Disposed locks return failed tickets. </summary>
     public bool Failed { get {  return Ticket < 0; } }
 
     /// <summary> Negative if lock failed. </summary>
     public readonly long Ticket;
 
+
+    // Private data >>
+
     /// <summary> Implementation-specific ticket handler. </summary>
-    internal readonly ITicketHandler? Handler;
+    private readonly TicketDisposedCallback? _handler;
 
-    public readonly bool Reentrant;
 
-    internal LockedTicket(long ticket, ITicketHandler? handler, bool reentrant)
+    // Implementation >>
+
+    internal LockedTicket(long ticket, TicketDisposedCallback? handler)
     {
         Ticket = ticket;
-        Handler = handler;
-        Reentrant = reentrant;
+        _handler = handler;
     }
 
     public void Dispose()
     {
-        Handler?.Exit(this);
+        if (_handler != null)
+        {
+            try 
+            {
+                _handler(this);
+            } finally { }
+        }
     }
 }

@@ -7,8 +7,6 @@ public interface IFIFOLock
 
     int QueueLength { get; }
 
-    LockedValue<T> LockValue<T>(T value);
-
     LockedTicket Lock();
 
     ValueTask<LockedTicket> LockAsync(bool preserveContext = false);

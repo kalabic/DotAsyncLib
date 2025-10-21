@@ -49,7 +49,7 @@ public class PriorityFIFOLock
         }
         InvalidOperationExtension.ThrowIfTrue(priorityTicket.Failed);
 
-        return new LockedTicket(priorityTicket.Ticket, new PriorityTicketHandler(asyncTicket, priorityTicket), false);
+        return PriorityTicketHandler.LinkedTickets(asyncTicket, priorityTicket);
     }
 
     public LockedTicket Lock()
@@ -67,7 +67,7 @@ public class PriorityFIFOLock
             return priorityTicket;
         }
 
-        return new LockedTicket(priorityTicket.Ticket, new PriorityTicketHandler(asyncTicket, priorityTicket), false);
+        return PriorityTicketHandler.LinkedTickets(asyncTicket, priorityTicket);
     }
 
     public async ValueTask<LockedTicket> LockAsync()
@@ -85,7 +85,7 @@ public class PriorityFIFOLock
             return priorityTicket;
         }
 
-        return new LockedTicket(priorityTicket.Ticket, new PriorityTicketHandler(asyncTicket, priorityTicket), false);
+        return PriorityTicketHandler.LinkedTickets(asyncTicket, priorityTicket);
     }
 
     public LockedTicket PriorityLock()
