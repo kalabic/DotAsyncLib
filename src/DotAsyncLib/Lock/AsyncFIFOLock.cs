@@ -16,7 +16,7 @@ namespace DotAsync.Lock;
 /// </list>
 /// </summary>
 public sealed class AsyncFIFOLock 
-    : FIFOLock
+    : DisposableFIFOLock
 {
     // tail of the queue; null == free
     private volatile McsNode? _tail;

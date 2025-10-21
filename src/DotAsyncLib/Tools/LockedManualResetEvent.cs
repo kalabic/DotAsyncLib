@@ -3,11 +3,13 @@ using DotAsync.Lock;
 
 namespace DotAsync.Tools;
 
+#pragma warning disable DotAsync_Lock1
+
 
 /// <summary>
 /// 
 /// Besides providing <see cref="ManualResetEventSlim"/> and access to its <see cref="System.Threading.WaitHandle"/>,
-/// this class provides and access to <see cref="Lock.DisposeLock"/> intended to be used by parent class for locking
+/// this class provides and access to <see cref="Lock.InvokeDisposeLock"/> intended to be used by parent class for locking
 /// ITS OWN state. This is to simplify and optimize implementation and is used by <see cref="AValue{TValue}"/>
 /// and <see cref="InternalVTS.AsyncValueWaiter{TValue}"/>.
 /// 
@@ -26,7 +28,7 @@ internal class LockedManualResetEvent
 
     private readonly ManualResetEventSlim _event = new();
 
-    private readonly DisposeLock _disposeLock = new(true);
+    private readonly InvokeDisposeLock _disposeLock = new(true);
 
 
     // Implementation >>
@@ -35,8 +37,8 @@ internal class LockedManualResetEvent
     {
         if (disposing)
         {
-            using var ticket = _disposeLock.PriorityLock();
-            _disposeLock.DisposeLocked();
+            using var ticket = _disposeLock.DisposalLock();
+            _disposeLock.CloseAndDisableInvoke();
             _event.Dispose();
             // base.Dispose also invoked under 'ticket' scope before return.
             base.Dispose(disposing);
@@ -46,7 +48,7 @@ internal class LockedManualResetEvent
     }
 
     public LockedTicket Lock()
-        => _disposeLock.Lock();
+        => _disposeLock.InvokeLock();
 
     public void Set()
         => _event.Set();

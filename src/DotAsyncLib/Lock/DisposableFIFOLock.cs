@@ -1,12 +1,13 @@
-﻿using DotBase.Tools;
-using DotBase.Core;
+﻿using DotBase.Core;
+using DotBase.Tools;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotAsync.Lock;
 
 
-public abstract class FIFOLock
+public abstract class DisposableFIFOLock
     : DisposableBase
-    , IFIFOLock
+    , IDisposableFIFOLock
 {
     protected const int ITERS_SPIN   = 100;
     protected const int ITERS_YIELD  = 200;
@@ -54,7 +55,7 @@ public abstract class FIFOLock
     //
     //-------------------------------------------------------------------------
 
-    protected FIFOLock(bool enableDispose)
+    protected DisposableFIFOLock(bool enableDispose)
     {
         _enableDispose = enableDispose;
     }
@@ -125,10 +126,9 @@ public abstract class FIFOLock
         }
     }
 
+    [Experimental("DotAsync_Lock0")]
     public int DisposeAndWaitEmptyQueue()
     {
-        throw new InvalidOperationException("WIP");
-#if false
         int length = QueueLength;
         Dispose();
         var spin = new SpinWait();
@@ -141,6 +141,5 @@ public abstract class FIFOLock
             iters++;
         }
         return length;
-#endif
     }
 }

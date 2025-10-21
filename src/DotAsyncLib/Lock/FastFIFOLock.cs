@@ -9,7 +9,7 @@ namespace DotAsync.Lock;
 /// 
 /// </summary>
 public sealed class FastFIFOLock
-    : FIFOLock
+    : DisposableFIFOLock
 {
     public FastFIFOLock(bool enableDispose = false)
         : base(enableDispose)

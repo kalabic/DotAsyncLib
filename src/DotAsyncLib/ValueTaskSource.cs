@@ -32,7 +32,7 @@ internal class ValueTaskSource<T> : IValueTaskSource<T>
 
     private ManualResetValueTaskSourceCore<T> _core;
 
-    private readonly FastFIFOLock _lock;
+    private readonly IFIFOLock _lock;
 
     private bool _completed;
 
@@ -43,7 +43,7 @@ internal class ValueTaskSource<T> : IValueTaskSource<T>
         : this(new FastFIFOLock())
     { }
 
-    public ValueTaskSource(FastFIFOLock fastLock)
+    public ValueTaskSource(IFIFOLock fastLock)
     {
         _core = new()
         {

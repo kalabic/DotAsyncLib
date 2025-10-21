@@ -14,7 +14,7 @@ namespace DotAsync.Lock;
 /// 
 /// </summary>
 public sealed class ReentrantFIFOLock 
-    : FIFOLock
+    : DisposableFIFOLock
 {
     private readonly AsyncLocal<OwnerState> _owner = new();
 

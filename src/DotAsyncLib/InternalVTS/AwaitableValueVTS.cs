@@ -29,10 +29,10 @@ internal abstract class AwaitableValueVTS<TValue, TCompletedValue>
 
     // Private data >>
 
-    protected readonly FastFIFOLock _lock = new();
+    protected readonly IFIFOLock _lock = new FastFIFOLock();
 
     /// <summary> Needed because 'Unregister' function can and will be invoked sometimes (very rare) during construction. </summary>
-    protected readonly FastFIFOLock _unregisterLock = new();
+    protected readonly IFIFOLock _unregisterLock = new FastFIFOLock();
 
     protected ValueTaskSource<TCompletedValue> _vts;
 

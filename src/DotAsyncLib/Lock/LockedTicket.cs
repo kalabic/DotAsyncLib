@@ -1,7 +1,10 @@
-﻿namespace DotAsync.Lock;
+﻿using DotBase.Log;
+using System.Runtime.CompilerServices;
+
+namespace DotAsync.Lock;
 
 
-internal delegate void TicketDisposedCallback(in LockedTicket ticket);
+internal delegate void TicketReleaseHandler(in LockedTicket ticket);
 
 
 /// <summary> 
@@ -29,25 +32,30 @@ public readonly struct LockedTicket
     // Private data >>
 
     /// <summary> Implementation-specific ticket handler. </summary>
-    private readonly TicketDisposedCallback? _handler;
+    private readonly TicketReleaseHandler? _handler;
 
 
     // Implementation >>
 
-    internal LockedTicket(long ticket, TicketDisposedCallback? handler)
+    internal LockedTicket(long ticket, TicketReleaseHandler? handler)
     {
         Ticket = ticket;
         _handler = handler;
     }
 
-    public void Dispose()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly void Dispose()
     {
         if (_handler != null)
         {
             try 
             {
                 _handler(this);
-            } finally { }
+            } 
+            catch (Exception ex) 
+            {
+                LiteLog.Log.ExceptionOccured("Lock ticket handler threw exception.", ex);
+            }
         }
     }
 }
