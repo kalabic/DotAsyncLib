@@ -7,13 +7,13 @@ internal class WaitableInvokeResultVTS<TValue>
     : AwaitableInvokeResultVTS<TValue>
 {
     public WaitableInvokeResultVTS(IAsyncValue<TValue> valueReader,
-                                         WaitHandle handle)
+                                   WaitHandle handle)
         : base(valueReader, handle)
     { }
 
     public WaitableInvokeResultVTS(IAsyncValue<TValue> valueReader,
-                                         WaitHandle handle,
-                                         int timeout)
+                                   WaitHandle handle,
+                                   int timeout)
         : base(valueReader, handle, timeout)
     { }
 

@@ -16,8 +16,8 @@ internal class CancellableInvokeResultVTS<TValue>
     // Implementation >>
 
     public CancellableInvokeResultVTS(IAsyncValue<TValue> valueReader,
-                                            WaitHandle handle,
-                                            CancellationToken cancellation)
+                                      WaitHandle handle,
+                                      CancellationToken cancellation)
         : base(valueReader, handle)
     {
         _cancellation = cancellation;
@@ -36,9 +36,9 @@ internal class CancellableInvokeResultVTS<TValue>
     }
 
     public CancellableInvokeResultVTS(IAsyncValue<TValue> valueReader,
-                                            WaitHandle handle,
-                                            int timeout,
-                                            CancellationToken cancellation)
+                                      WaitHandle handle,
+                                      int timeout,
+                                      CancellationToken cancellation)
         : base(valueReader, handle, timeout)
     {
         _cancellation = cancellation;

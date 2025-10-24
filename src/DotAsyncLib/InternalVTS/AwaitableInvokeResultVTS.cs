@@ -6,14 +6,13 @@ namespace DotAsync.InternalVTS;
 internal abstract class AwaitableInvokeResultVTS<TValue>
     : AwaitableValueVTS<TValue, InvokeResult>
 {
-    public AwaitableInvokeResultVTS(IAsyncValue<TValue> valueReader,
-                           WaitHandle handle)
+    public AwaitableInvokeResultVTS(IAsyncValue<TValue> valueReader, WaitHandle handle)
         : base(valueReader, handle)
     { }
 
     public AwaitableInvokeResultVTS(IAsyncValue<TValue> valueReader,
-                           WaitHandle handle,
-                           int timeout)
+                                    WaitHandle handle,
+                                    int timeout)
         : base(valueReader, handle, timeout)
     { }
 
