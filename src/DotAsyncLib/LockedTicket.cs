@@ -54,7 +54,7 @@ public readonly struct LockedTicket
             } 
             catch (Exception ex) 
             {
-                LiteLog.Log.ExceptionOccured("Lock ticket handler threw exception.", ex);
+                LiteLog.Log.ExceptionOccurred("Lock ticket handler threw exception.", ex);
             }
         }
     }

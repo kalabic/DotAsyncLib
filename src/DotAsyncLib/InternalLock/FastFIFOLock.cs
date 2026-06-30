@@ -58,7 +58,7 @@ internal sealed class FastFIFOLock
                         {
                             var task = Task.Run(() =>
                             {
-                                SpinWait.SpinUntil(() => !IsDisposed && Volatile.Read(ref _serving) == my);
+                                SpinWait.SpinUntil(() => IsDisposed || Volatile.Read(ref _serving) == my);
                                 return IsDisposed ? LockedTicket.FAILED : new LockedTicket(my, Exit);
                             });
                             return new ValueTask<LockedTicket>(task);
@@ -68,7 +68,7 @@ internal sealed class FastFIFOLock
                     {
                         var task = Task.Run(() =>
                         {
-                            SpinWait.SpinUntil(() => !IsDisposed && Volatile.Read(ref _serving) == my);
+                            SpinWait.SpinUntil(() => IsDisposed || Volatile.Read(ref _serving) == my);
                             return IsDisposed ? LockedTicket.FAILED : new LockedTicket(my, Exit);
                         });
                         return new ValueTask<LockedTicket>(task);
